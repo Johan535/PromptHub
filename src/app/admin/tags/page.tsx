@@ -1,9 +1,11 @@
 import { SiteShell } from "@/components/layout/site-shell";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { tags } from "@/lib/mock-data";
+import { listTags } from "@/lib/catalog-service";
 
-export default function AdminTagsPage() {
+export default async function AdminTagsPage() {
+  const tags = await listTags();
+
   return (
     <SiteShell>
       <div className="mb-8">

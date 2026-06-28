@@ -1,13 +1,11 @@
 import { SiteShell } from "@/components/layout/site-shell";
+import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
+import { listAdminUsers } from "@/lib/admin-service";
 
-const users = [
-  { id: "user-1", username: "Aster", role: "ADMIN", status: "ACTIVE" },
-  { id: "user-2", username: "Jun", role: "USER", status: "ACTIVE" },
-  { id: "user-3", username: "Mina", role: "USER", status: "ACTIVE" },
-];
+export default async function AdminUsersPage() {
+  const users = await listAdminUsers();
 
-export default function AdminUsersPage() {
   return (
     <SiteShell>
       <div className="mb-8">
@@ -22,14 +20,14 @@ export default function AdminUsersPage() {
       <div className="grid gap-4">
         {users.map((user) => (
           <Card key={user.id} className="p-6">
-            <div className="flex items-center justify-between gap-4">
+            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
               <div>
                 <p className="text-xl font-semibold">{user.username}</p>
-                <p className="mt-1 text-sm text-muted">{user.id}</p>
+                <p className="mt-1 text-sm text-muted">{user.email}</p>
               </div>
-              <div className="text-right text-sm text-muted">
-                <p>{user.role}</p>
-                <p>{user.status}</p>
+              <div className="flex gap-2">
+                <Badge>{user.role}</Badge>
+                <Badge>{user.status}</Badge>
               </div>
             </div>
           </Card>

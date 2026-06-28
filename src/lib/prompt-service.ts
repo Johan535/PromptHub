@@ -74,12 +74,81 @@ function mapPrompt(record: PromptWithRelations): PromptItem {
   };
 }
 
-export async function listPublicPrompts() {
+export interface PromptListFilters {
+  keyword?: string;
+  category?: string;
+  tag?: string;
+  tool?: string;
+  sort?: "latest" | "popular" | "favorites";
+}
+
+function buildPromptOrder(sort?: PromptListFilters["sort"]) {
+  if (sort === "popular") {
+    return { useCount: "desc" as const };
+  }
+
+  if (sort === "favorites") {
+    return { favoriteCount: "desc" as const };
+  }
+
+  return { updatedAt: "desc" as const };
+}
+
+export async function listPublicPrompts(filters: PromptListFilters = {}) {
+  const keyword = filters.keyword?.trim();
+  const tool = filters.tool?.trim();
+
   const records = await db.prompt.findMany({
     where: {
       deletedAt: null,
       visibility: PromptVisibility.PUBLIC,
       status: PromptStatus.PUBLISHED,
+      ...(keyword
+        ? {
+            OR: [
+              { title: { contains: keyword } },
+              { summary: { contains: keyword } },
+              { content: { contains: keyword } },
+            ],
+          }
+        : {}),
+      ...(filters.category
+        ? {
+            category: {
+              slug: filters.category,
+            },
+          }
+        : {}),
+      ...(filters.tag
+        ? {
+            tags: {
+              some: {
+                tag: {
+                  name: filters.tag,
+                },
+              },
+            },
+          }
+        : {}),
+      ...(tool
+        ? {
+            toolSupport: {
+              array_contains: tool,
+            },
+          }
+        : {}),
+    },
+    include: promptInclude,
+    orderBy: buildPromptOrder(filters.sort),
+  });
+
+  return records.map(mapPrompt);
+}
+
+export async function listAllPromptsForAdmin() {
+  const records = await db.prompt.findMany({
+    where: {
+      deletedAt: null,
     },
     include: promptInclude,
     orderBy: {

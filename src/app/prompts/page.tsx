@@ -1,69 +1,129 @@
+import Link from "next/link";
+import { Search } from "lucide-react";
 import { PromptCard } from "@/components/prompt/prompt-card";
 import { SiteShell } from "@/components/layout/site-shell";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { Input } from "@/components/ui/input";
+import { Select } from "@/components/ui/select";
 import { listCategories, listTags } from "@/lib/catalog-service";
-import { listPublicPrompts } from "@/lib/prompt-service";
+import { listPublicPrompts, type PromptListFilters } from "@/lib/prompt-service";
 
-export default async function PromptsPage() {
+const tools = ["Cursor", "Claude Code", "Codex", "Windsurf", "Trae"];
+
+function asValue(value: string | string[] | undefined) {
+  return Array.isArray(value) ? value[0] : value;
+}
+
+export default async function PromptsPage({
+  searchParams,
+}: {
+  searchParams: Promise<Record<string, string | string[] | undefined>>;
+}) {
+  const params = await searchParams;
+  const filters: PromptListFilters = {
+    keyword: asValue(params.keyword),
+    category: asValue(params.category),
+    tag: asValue(params.tag),
+    tool: asValue(params.tool),
+    sort: (asValue(params.sort) as PromptListFilters["sort"]) ?? "latest",
+  };
+
   const [categories, tags, prompts] = await Promise.all([
     listCategories(),
     listTags(),
-    listPublicPrompts(),
+    listPublicPrompts(filters),
   ]);
 
   return (
     <SiteShell>
-      <div className="mb-8">
-        <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted">
-          Prompt Library
-        </p>
-        <h1 className="mt-3 text-4xl font-semibold tracking-tight">
-          面向 AI 编程任务的 Prompt 广场
-        </h1>
-        <p className="mt-4 max-w-3xl text-base leading-8 text-muted">
-          当前页面已经接入真实数据库读取，后续会继续补齐筛选、排序和搜索。
-        </p>
+      <div className="mb-8 flex flex-col gap-4 lg:flex-row lg:items-end lg:justify-between">
+        <div>
+          <p className="text-sm font-medium uppercase tracking-[0.2em] text-muted">
+            Prompt Library
+          </p>
+          <h1 className="mt-3 text-4xl font-semibold tracking-tight">
+            Prompt 广场
+          </h1>
+        </div>
+        <Link href="/editor/new">
+          <Button>新建 Prompt</Button>
+        </Link>
       </div>
 
-      <div className="grid gap-6 lg:grid-cols-[280px_1fr]">
-        <aside className="space-y-6">
-          <Card className="p-6">
-            <p className="text-sm font-semibold text-foreground">分类</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {categories.map((category) => (
-                <Badge key={category.id}>{category.name}</Badge>
-              ))}
-            </div>
-          </Card>
+      <Card className="mb-8 p-5">
+        <form className="grid gap-3 lg:grid-cols-[1.4fr_1fr_1fr_1fr_0.8fr_auto]">
+          <label className="relative block">
+            <Search className="pointer-events-none absolute left-3 top-1/2 size-4 -translate-y-1/2 text-muted" />
+            <Input
+              name="keyword"
+              defaultValue={filters.keyword ?? ""}
+              className="pl-10"
+              placeholder="搜索标题、简介或正文"
+            />
+          </label>
 
-          <Card className="p-6">
-            <p className="text-sm font-semibold text-foreground">热门标签</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {tags.map((tag) => (
-                <Badge key={tag.id}>{tag.name}</Badge>
-              ))}
-            </div>
-          </Card>
+          <Select name="category" defaultValue={filters.category ?? ""}>
+            <option value="">全部分类</option>
+            {categories.map((category) => (
+              <option key={category.id} value={category.slug}>
+                {category.name}
+              </option>
+            ))}
+          </Select>
 
-          <Card className="p-6">
-            <p className="text-sm font-semibold text-foreground">适配工具</p>
-            <div className="mt-4 flex flex-wrap gap-2">
-              {["Cursor", "Claude Code", "Codex", "Windsurf", "Trae"].map(
-                (tool) => (
-                  <Badge key={tool}>{tool}</Badge>
-                ),
-              )}
-            </div>
-          </Card>
-        </aside>
+          <Select name="tag" defaultValue={filters.tag ?? ""}>
+            <option value="">全部标签</option>
+            {tags.map((tag) => (
+              <option key={tag.id} value={tag.name}>
+                {tag.name}
+              </option>
+            ))}
+          </Select>
 
+          <Select name="tool" defaultValue={filters.tool ?? ""}>
+            <option value="">全部工具</option>
+            {tools.map((tool) => (
+              <option key={tool} value={tool}>
+                {tool}
+              </option>
+            ))}
+          </Select>
+
+          <Select name="sort" defaultValue={filters.sort ?? "latest"}>
+            <option value="latest">最新</option>
+            <option value="popular">使用最多</option>
+            <option value="favorites">收藏最多</option>
+          </Select>
+
+          <Button type="submit">筛选</Button>
+        </form>
+
+        <div className="mt-4 flex flex-wrap items-center gap-2">
+          <Badge>{prompts.length} 条结果</Badge>
+          {filters.keyword ? <Badge>关键词：{filters.keyword}</Badge> : null}
+          {filters.category ? <Badge>分类：{filters.category}</Badge> : null}
+          {filters.tag ? <Badge>标签：{filters.tag}</Badge> : null}
+          {filters.tool ? <Badge>工具：{filters.tool}</Badge> : null}
+          <Link href="/prompts" className="text-sm font-medium text-primary">
+            清空筛选
+          </Link>
+        </div>
+      </Card>
+
+      {prompts.length ? (
         <section className="grid gap-6 md:grid-cols-2 xl:grid-cols-3">
           {prompts.map((prompt) => (
             <PromptCard key={prompt.id} prompt={prompt} />
           ))}
         </section>
-      </div>
+      ) : (
+        <Card className="p-10 text-center">
+          <p className="text-xl font-semibold">没有找到匹配的 Prompt</p>
+          <p className="mt-3 text-sm text-muted">换个关键词或清空筛选再试一次。</p>
+        </Card>
+      )}
     </SiteShell>
   );
 }
