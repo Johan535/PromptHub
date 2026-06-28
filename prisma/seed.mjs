@@ -70,7 +70,7 @@ async function main() {
         categoryId: categoryRows[1].id,
         visibility: "PUBLIC",
         status: "PUBLISHED",
-        toolSupport: JSON.stringify(["Cursor", "Codex", "Claude Code"]),
+        toolSupport: ["Cursor", "Codex", "Claude Code"],
         favoriteCount: 12,
         useCount: 35,
         variables: {
@@ -136,7 +136,7 @@ async function main() {
         categoryId: categoryRows[2].id,
         visibility: "PUBLIC",
         status: "PUBLISHED",
-        toolSupport: JSON.stringify(["Cursor", "Codex", "Trae"]),
+        toolSupport: ["Cursor", "Codex", "Trae"],
         favoriteCount: 8,
         useCount: 21,
         variables: {

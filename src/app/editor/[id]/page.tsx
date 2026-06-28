@@ -1,6 +1,7 @@
 import { notFound, redirect } from "next/navigation";
 import { SiteShell } from "@/components/layout/site-shell";
 import { PromptEditorForm } from "@/components/prompt/prompt-editor-form";
+import { listCategories } from "@/lib/catalog-service";
 import { db } from "@/lib/db";
 import { getPromptEditorData } from "@/lib/prompt-service";
 import { requireUser } from "@/lib/session";
@@ -30,7 +31,10 @@ export default async function EditPromptPage({
   }
 
   const { id } = await params;
-  const prompt = await getPromptEditorData(id, user.id);
+  const [prompt, categories] = await Promise.all([
+    getPromptEditorData(id, user.id),
+    listCategories(),
+  ]);
 
   if (!prompt) {
     notFound();
@@ -46,10 +50,10 @@ export default async function EditPromptPage({
           编辑 Prompt
         </h1>
         <p className="mt-4 max-w-3xl text-base leading-8 text-muted">
-          当前正在编辑：{prompt.title}。下一步会把默认值和真实保存逻辑接进来。
+          当前正在编辑：{prompt.title}。修改后会直接更新数据库内容。
         </p>
       </div>
-      <PromptEditorForm />
+      <PromptEditorForm categories={categories} initialPrompt={prompt} />
     </SiteShell>
   );
 }

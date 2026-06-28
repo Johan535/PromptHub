@@ -1,6 +1,7 @@
 import { notFound } from "next/navigation";
 import { Heart, Layers3, UserRound } from "lucide-react";
 import { SiteShell } from "@/components/layout/site-shell";
+import { PromptDetailActions } from "@/components/prompt/prompt-detail-actions";
 import { PromptRenderer } from "@/components/prompt/prompt-renderer";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -67,7 +68,7 @@ export default async function PromptDetailPage({
             ))}
           </div>
           <div className="mt-8 flex gap-3">
-            <Button>收藏 Prompt</Button>
+            <PromptDetailActions promptId={prompt.id} />
             <Button variant="outline">复制原始模板</Button>
           </div>
         </Card>

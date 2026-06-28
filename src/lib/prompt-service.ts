@@ -26,22 +26,12 @@ type PromptWithRelations = Prisma.PromptGetPayload<{
   include: typeof promptInclude;
 }>;
 
-function parseStringArray(value: string | null): string[] | undefined {
-  if (!value) {
+function parseJsonArray(value: Prisma.JsonValue | null): string[] | undefined {
+  if (!Array.isArray(value)) {
     return undefined;
   }
 
-  try {
-    const parsed = JSON.parse(value) as unknown;
-
-    if (!Array.isArray(parsed)) {
-      return undefined;
-    }
-
-    return parsed.filter((item): item is string => typeof item === "string");
-  } catch {
-    return undefined;
-  }
+  return value.filter((item): item is string => typeof item === "string");
 }
 
 function mapPrompt(record: PromptWithRelations): PromptItem {
@@ -52,7 +42,7 @@ function mapPrompt(record: PromptWithRelations): PromptItem {
     content: record.content,
     visibility: record.visibility,
     status: record.status,
-    toolSupport: parseStringArray(record.toolSupport) as ToolName[] | undefined ?? [],
+    toolSupport: (parseJsonArray(record.toolSupport) as ToolName[] | undefined) ?? [],
     favoriteCount: record.favoriteCount,
     useCount: record.useCount,
     createdAt: record.createdAt.toISOString(),
@@ -76,7 +66,7 @@ function mapPrompt(record: PromptWithRelations): PromptItem {
         varLabel: variable.varLabel,
         varType: variable.varType as PromptVariable["varType"],
         defaultValue: variable.defaultValue,
-        options: parseStringArray(variable.options),
+        options: parseJsonArray(variable.options),
         isRequired: variable.isRequired,
         sortOrder: variable.sortOrder,
       }),
@@ -200,14 +190,14 @@ export async function createPrompt(userId: string, input: PromptMutationInput) {
       categoryId: input.categoryId,
       visibility: input.visibility,
       status: input.status,
-      toolSupport: JSON.stringify(input.toolSupport),
+      toolSupport: input.toolSupport,
       variables: {
         create: input.variables.map((variable) => ({
           varKey: variable.varKey,
           varLabel: variable.varLabel,
           varType: variable.varType,
           defaultValue: variable.defaultValue ?? "",
-          options: JSON.stringify(variable.options ?? []),
+          options: variable.options ?? [],
           isRequired: variable.isRequired,
           sortOrder: variable.sortOrder,
         })),
@@ -257,7 +247,7 @@ export async function updatePrompt(
       categoryId: input.categoryId,
       visibility: input.visibility,
       status: input.status,
-      toolSupport: JSON.stringify(input.toolSupport),
+      toolSupport: input.toolSupport,
       variables: {
         deleteMany: {},
         create: input.variables.map((variable) => ({
@@ -265,7 +255,7 @@ export async function updatePrompt(
           varLabel: variable.varLabel,
           varType: variable.varType,
           defaultValue: variable.defaultValue ?? "",
-          options: JSON.stringify(variable.options ?? []),
+          options: variable.options ?? [],
           isRequired: variable.isRequired,
           sortOrder: variable.sortOrder,
         })),

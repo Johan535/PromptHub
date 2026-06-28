@@ -3,7 +3,7 @@ generator client {
 }
 
 datasource db {
-  provider = "sqlite"
+  provider = "mysql"
   url      = env("DATABASE_URL")
 }
 
@@ -74,7 +74,7 @@ model Prompt {
   categoryId    String
   visibility    PromptVisibility @default(PRIVATE)
   status        PromptStatus     @default(DRAFT)
-  toolSupport   String
+  toolSupport   Json
   favoriteCount Int              @default(0)
   useCount      Int              @default(0)
   createdAt     DateTime         @default(now())
@@ -94,7 +94,7 @@ model PromptVariable {
   varLabel     String
   varType      VariableType
   defaultValue String?
-  options      String?
+  options      Json?
   isRequired   Boolean      @default(false)
   sortOrder    Int          @default(0)
   prompt       Prompt       @relation(fields: [promptId], references: [id], onDelete: Cascade)
