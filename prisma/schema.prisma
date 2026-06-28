@@ -1,0 +1,121 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum PromptVisibility {
+  PUBLIC
+  PRIVATE
+}
+
+enum PromptStatus {
+  DRAFT
+  PUBLISHED
+  OFFLINE
+}
+
+enum VariableType {
+  INPUT
+  TEXTAREA
+  SELECT
+}
+
+model User {
+  id           String     @id @default(cuid())
+  email        String     @unique
+  username     String     @unique
+  passwordHash String
+  avatarUrl    String?
+  role         UserRole   @default(USER)
+  status       UserStatus @default(ACTIVE)
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+  prompts      Prompt[]
+  favorites    Favorite[]
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  sortOrder Int      @default(0)
+  status    String   @default("active")
+  createdAt DateTime @default(now())
+  prompts   Prompt[]
+}
+
+model Tag {
+  id        String      @id @default(cuid())
+  name      String      @unique
+  createdAt DateTime    @default(now())
+  prompts   PromptTag[]
+}
+
+model Prompt {
+  id            String           @id @default(cuid())
+  userId        String
+  title         String
+  summary       String
+  content       String
+  categoryId    String
+  visibility    PromptVisibility @default(PRIVATE)
+  status        PromptStatus     @default(DRAFT)
+  toolSupport   String
+  favoriteCount Int              @default(0)
+  useCount      Int              @default(0)
+  createdAt     DateTime         @default(now())
+  updatedAt     DateTime         @updatedAt
+  deletedAt     DateTime?
+  author        User             @relation(fields: [userId], references: [id])
+  category      Category         @relation(fields: [categoryId], references: [id])
+  variables     PromptVariable[]
+  tags          PromptTag[]
+  favorites     Favorite[]
+}
+
+model PromptVariable {
+  id           String       @id @default(cuid())
+  promptId     String
+  varKey       String
+  varLabel     String
+  varType      VariableType
+  defaultValue String?
+  options      String?
+  isRequired   Boolean      @default(false)
+  sortOrder    Int          @default(0)
+  prompt       Prompt       @relation(fields: [promptId], references: [id], onDelete: Cascade)
+}
+
+model PromptTag {
+  promptId String
+  tagId    String
+  prompt   Prompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  tag      Tag    @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([promptId, tagId])
+}
+
+model Favorite {
+  id        String   @id @default(cuid())
+  userId    String
+  promptId  String
+  createdAt DateTime @default(now())
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  prompt    Prompt   @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  @@unique([userId, promptId])
+}
